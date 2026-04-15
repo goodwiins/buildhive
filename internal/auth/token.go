@@ -2,41 +2,33 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
-const bcryptCost = 12
-
-// GenerateToken creates a cryptographically random token and its bcrypt hash.
-// The plaintext token is returned for one-time display to the user.
+// GenerateToken creates a cryptographically random 32-byte token.
+// Returns the plaintext token (for one-time display) and its SHA-256 hash (for DB storage).
 func GenerateToken() (token, hash string, err error) {
 	b := make([]byte, 32)
 	if _, err = rand.Read(b); err != nil {
 		return
 	}
 	token = hex.EncodeToString(b)
-	hash, err = hashRaw(token)
+	hash = HashToken(token)
 	return
 }
 
-// HashToken hashes an existing plaintext token (e.g. the admin token from env).
-func HashToken(token string) (string, error) {
-	return hashRaw(token)
+// HashToken returns the SHA-256 hex digest of a token.
+// Used as the deterministic DB lookup key.
+func HashToken(token string) string {
+	h := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(h[:])
 }
 
-// VerifyToken checks a plaintext token against a bcrypt hash.
-// Returns false if token or hash is empty.
+// VerifyToken checks a plaintext token against a SHA-256 hash.
 func VerifyToken(token, hash string) bool {
 	if token == "" || hash == "" {
 		return false
 	}
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(token))
-	return err == nil
-}
-
-func hashRaw(token string) (string, error) {
-	h, err := bcrypt.GenerateFromPassword([]byte(token), bcryptCost)
-	return string(h), err
+	return HashToken(token) == hash
 }

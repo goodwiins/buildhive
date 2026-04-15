@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -241,21 +242,17 @@ func (s *Server) initBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hash, err := auth.HashToken(rawToken)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to hash token")
-		return
-	}
+	lookupHash := auth.HashToken(rawToken)
 
-	token, err := s.store.GetTokenByHash(ctx, hash)
+	token, err := s.store.GetTokenByHash(ctx, lookupHash)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, "invalid token")
 		return
 	}
 
 	if err := s.store.UpdateTokenLastUsed(ctx, token.ID); err != nil {
-		// Non-fatal: log but continue.
-		_ = fmt.Sprintf("update token last used: %v", err)
+		// best-effort — log if available, but don't fail the request
+		_ = err
 	}
 
 	builders, err := s.store.GetHealthyBuilders(ctx)
@@ -357,16 +354,16 @@ func (s *Server) buildEvent(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	var imageRef sql.NullString
-	if body.ImageRef != "" {
-		imageRef = sql.NullString{String: body.ImageRef, Valid: true}
-	}
-	if err := s.store.UpdateBuildStatus(r.Context(), db.UpdateBuildStatusParams{
+	params := db.UpdateBuildStatusParams{
 		ID:       buildID,
 		Status:   body.Status,
 		CacheHit: body.CacheHit,
-		ImageRef: imageRef,
-	}); err != nil {
+		ImageRef: sql.NullString{String: body.ImageRef, Valid: body.ImageRef != ""},
+	}
+	if body.Status == "success" || body.Status == "failed" || body.Status == "cancelled" {
+		params.FinishedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	}
+	if err := s.store.UpdateBuildStatus(r.Context(), params); err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("update build status: %v", err))
 		return
 	}

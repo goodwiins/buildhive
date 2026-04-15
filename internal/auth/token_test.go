@@ -29,13 +29,13 @@ func TestVerifyInvalidToken(t *testing.T) {
 	}
 }
 
-func TestHashAdminToken(t *testing.T) {
-	hash, err := auth.HashToken("admin-secret")
-	if err != nil {
-		t.Fatalf("HashToken() error: %v", err)
+func TestHashToken(t *testing.T) {
+	hash := auth.HashToken("admin-secret")
+	if len(hash) != 64 {
+		t.Errorf("expected 64-char SHA-256 hex, got %d", len(hash))
 	}
 	if !auth.VerifyToken("admin-secret", hash) {
-		t.Error("VerifyToken() failed for admin token")
+		t.Error("VerifyToken() failed for known hash")
 	}
 }
 
