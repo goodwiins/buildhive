@@ -11,8 +11,8 @@ func TestGenerateAndVerify(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GenerateToken() error: %v", err)
 	}
-	if len(token) < 32 {
-		t.Errorf("token too short: %d chars", len(token))
+	if len(token) != 64 {
+		t.Errorf("expected 64-char hex token, got %d chars", len(token))
 	}
 	if !auth.VerifyToken(token, hash) {
 		t.Error("VerifyToken() returned false for valid token")
@@ -20,7 +20,10 @@ func TestGenerateAndVerify(t *testing.T) {
 }
 
 func TestVerifyInvalidToken(t *testing.T) {
-	_, hash, _ := auth.GenerateToken()
+	_, hash, err := auth.GenerateToken()
+	if err != nil {
+		t.Fatalf("GenerateToken() error: %v", err)
+	}
 	if auth.VerifyToken("wrongtoken", hash) {
 		t.Error("VerifyToken() returned true for wrong token")
 	}
@@ -37,8 +40,18 @@ func TestHashAdminToken(t *testing.T) {
 }
 
 func TestVerifyEmptyToken(t *testing.T) {
-	_, hash, _ := auth.GenerateToken()
+	_, hash, err := auth.GenerateToken()
+	if err != nil {
+		t.Fatalf("GenerateToken() error: %v", err)
+	}
 	if auth.VerifyToken("", hash) {
 		t.Error("VerifyToken() returned true for empty token")
+	}
+	token2, _, err2 := auth.GenerateToken()
+	if err2 != nil {
+		t.Fatalf("GenerateToken() error: %v", err2)
+	}
+	if auth.VerifyToken(token2, "") {
+		t.Error("VerifyToken() returned true for empty hash")
 	}
 }
