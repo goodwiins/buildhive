@@ -21,7 +21,10 @@ func (s *Server) adminAuth(next http.Handler) http.Handler {
 
 func (s *Server) projectTokenAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Full validation done in initBuild handler (needs DB)
+		// TODO(task-7): implement project token validation
+		// Token validation is performed inside initBuild so the handler
+		// has access to the store and can return the build record in one
+		// round-trip. Move validation here if additional routes need it.
 		next.ServeHTTP(w, r)
 	})
 }
