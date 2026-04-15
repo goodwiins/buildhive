@@ -10,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U buildhive -d buildhive"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   server:
     build:
@@ -17,14 +22,15 @@ services:
       dockerfile: Dockerfile.server
     environment:
       DATABASE_URL: postgres://buildhive:buildhive@postgres:5432/buildhive?sslmode=disable
-      BUILDHIVE_ADMIN_TOKEN: changeme
+      BUILDHIVE_ADMIN_TOKEN: ${BUILDHIVE_ADMIN_TOKEN:-changeme}
       PORT: 8080
       GRPC_PORT: 8765
     ports:
       - "8080:8080"
       - "8765:8765"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
 volumes:
   pgdata:

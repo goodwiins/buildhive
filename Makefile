@@ -1,4 +1,4 @@
-.PHONY: build build-server build-agent build-cli test lint migrate-up web
+.PHONY: build build-server build-agent build-cli test lint migrate-up web test-integration
 
 GO=go
 GOFLAGS=-trimpath
@@ -16,7 +16,7 @@ build-cli:
 	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/buildhive ./cmd/cli
 
 test:
-	$(GO) test ./... -v
+	$(GO) test -race ./... -v
 
 lint:
 	golangci-lint run ./...

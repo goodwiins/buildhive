@@ -3,3 +3,16 @@ web/dist/
 web/node_modules/
 *.env
 .env
+.env.*
+!.env.example
+
+# Go artifacts
+*.test
+coverage.out
+coverage.html
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
