@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS build_logs;
+DROP TABLE IF EXISTS builds;
+DROP TABLE IF EXISTS builders;
+DROP TABLE IF EXISTS api_tokens;
+DROP TABLE IF EXISTS projects;
